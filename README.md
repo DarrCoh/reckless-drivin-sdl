@@ -4,6 +4,9 @@
 
 # Reckless Drivin'
 
+[![macOS](https://img.shields.io/github/actions/workflow/status/DarrCoh/reckless-drivin-sdl/build.yml?label=macOS&logo=apple)](https://github.com/DarrCoh/reckless-drivin-sdl/actions/workflows/build.yml)
+[![Linux](https://img.shields.io/github/actions/workflow/status/DarrCoh/reckless-drivin-sdl/build.yml?label=Linux&logo=linux)](https://github.com/DarrCoh/reckless-drivin-sdl/actions/workflows/build.yml)
+
 ### A native SDL2 port of the classic Mac OS racing game
 
 *Originally by [Jonas Echterhoff](https://github.com/jechter/RecklessDrivin) (2000), brought back to life on modern hardware*
@@ -28,7 +31,7 @@ Reckless Drivin' was one of *those* games. The kind that came pre-installed (or 
 
 Years later, I got hit with a tiny wave of nostalgia. I wanted to play it again, for old time's sake. Not in an emulator, not through some janky compatibility layer, but **running natively on my MacBook**.
 
-The original source code had been [released on GitHub](https://github.com/jechter/RecklessDrivin) by Jonas Echterhoff in 2019 under the MIT license. How hard could it be, you'd say? Turns out: *very*. The original code was pure Classic Mac OS: PowerPC, big-endian, 32-bit, built with CodeWarrior, using DrawSprocket, InputSprocket, the Mac Sound Manager, and Mac Resource Forks. None of that exists anymore. Every platform API had to be replaced. Every byte of game data was stored backwards relative to my CPU. It was a rabbit hole, and [Claude Code](https://claude.ai/code) and I went all the way down.
+The original source code had been [released on GitHub](https://github.com/jechter/RecklessDrivin) by Jonas Echterhoff in 2019 under the MIT license. How hard could it be, you'd say? Turns out: *very*. The original code was pure Classic Mac OS: PowerPC, big-endian, 32-bit, built with CodeWarrior, using DrawSprocket, InputSprocket, the Mac Sound Manager, and Mac Resource Forks. None of that exists anymore. Every platform API had to be replaced. Every byte of game data was stored backwards relative to my CPU. It was a rabbit hole, and I went all the way down.
 
 This is the result: a port of Reckless Drivin' with all 10 levels, every screen, and every effect, running natively with pixel-perfect graphics, proper audio, and full mouse + keyboard + gamepad controls.
 
@@ -342,7 +345,9 @@ RecklessDrivin-SDL/
 
 **Original game:** [Jonas Echterhoff](https://github.com/jechter/RecklessDrivin) (2000), released under the MIT License in 2019
 
-**SDL2 port:** Darren Cohen
+**SDL2 port:** [Darren Cohen](https://github.com/DarrCoh)
+
+**Built with:** [Claude Code](https://claude.ai/code)
 
 **LZRW3-A compression:** Ross Williams (public domain)
 
