@@ -395,12 +395,34 @@ void InitInterface(void)
 	sHoverButton = kNoButton;
 	SaveFlushEvents();
 	gGameOn=false;
+	/* Wait for action keys to be released to prevent immediate menu triggers */
+	while(Platform_IsKeyDown(SDL_SCANCODE_RETURN)||
+		  Platform_IsKeyDown(SDL_SCANCODE_KP_ENTER)||
+		  Platform_IsKeyDown(SDL_SCANCODE_SPACE)||
+		  Platform_IsKeyDown(SDL_SCANCODE_ESCAPE))
+	{
+		Platform_PollEvents();
+		SDL_Delay(16);
+	}
 }
 
 void WaitForPress(void)
 {
 	int pressed=false;
 	Platform_ShowCursor();
+	/* Wait for any held keys/buttons to be released first */
+	for(;;)
+	{
+		Platform_PollEvents();
+		if(Platform_ShouldQuit()) return;
+		Platform_GetMouseClick(NULL,NULL);
+		if(!Platform_IsKeyDown(SDL_SCANCODE_RETURN)&&
+		   !Platform_IsKeyDown(SDL_SCANCODE_SPACE)&&
+		   !Platform_IsKeyDown(SDL_SCANCODE_ESCAPE)&&
+		   !Platform_ContinuePress())
+			break;
+		SDL_Delay(16);
+	}
 	while(!pressed)
 	{
 		Platform_PollEvents();
