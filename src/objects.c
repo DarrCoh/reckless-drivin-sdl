@@ -21,7 +21,12 @@
 #define kExpMass			250
 #define kGravity			50.0
 
+#define kMaxDeferredFrees	512
+
 void ObjectPhysics(tObject *);
+
+static Ptr gDeferredFrees[kMaxDeferredFrees];
+static int gNumDeferredFrees = 0;
 
 
 /* Byte-swap all fields of an object type loaded from big-endian pack data */
@@ -323,13 +328,18 @@ void RemoveObject(tObject *theObj)
 	}
 	else
 	{
+		if(((tObject*)theObj->next)->prev!=theObj)
+			return;
 		if(theObj==gFirstVisObj)
 			gFirstVisObj=(tObject*)gFirstVisObj->next;
 		if(theObj==gLastVisObj)
 			gLastVisObj=(tObject*)gLastVisObj->next;
 		((tObject*)theObj->prev)->next=theObj->next;
 		((tObject*)theObj->next)->prev=theObj->prev;
-		DisposePtr((Ptr)theObj);
+		if(gNumDeferredFrees<kMaxDeferredFrees)
+			gDeferredFrees[gNumDeferredFrees++]=(Ptr)theObj;
+		else
+			DisposePtr((Ptr)theObj);
 	}
 }
 
@@ -590,6 +600,14 @@ static inline void AnimateObject(tObject *theObj)
 			theObj->frame=(*objType).frame;
 }
 
+void FlushDeferredFrees(void)
+{
+	int i;
+	for(i=0;i<gNumDeferredFrees;i++)
+		DisposePtr(gDeferredFrees[i]);
+	gNumDeferredFrees=0;
+}
+
 void MoveObjects()
 {
 	tObject	*theObj=(tObject*)(gFirstObj->next);
@@ -615,4 +633,5 @@ void MoveObjects()
 		theObj=next;
 	}
 	SortObjects();
+	FlushDeferredFrees();
 }

@@ -148,6 +148,7 @@ extern float gXDriftPos,gYDriftPos,gXFrontDriftPos,gYFrontDriftPos,gZoomVelo;
 extern float gSpikeFrame;
 
 void MoveObjects();
+void FlushDeferredFrees(void);
 tObject *NewObject(tObject *,SInt16);
 void RemoveObject(tObject *);
 void InsertObjectGroup(tObjectGroupReference);

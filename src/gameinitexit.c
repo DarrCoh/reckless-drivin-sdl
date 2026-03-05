@@ -290,6 +290,7 @@ void DisposeLevel()
 		SpriteUnused((*(tObject*)gFirstObj->next).frame);
 		RemoveObject((tObject*)gFirstObj->next);
 	}
+	FlushDeferredFrees();
 	DisposePtr((Ptr)gFirstObj);
 }
 
