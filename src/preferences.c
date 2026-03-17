@@ -13,9 +13,16 @@ tPrefs gPrefs;
 static const char *GetPrefsPath(void)
 {
     static char path[512];
-    const char *home = getenv("HOME");
-    if (!home) home = ".";
-    snprintf(path, sizeof(path), "%s/.recklessdrivin_prefs", home);
+    char* prefDir = SDL_GetPrefPath("DarrCoh", "RecklessDrivin");
+    if (prefDir) {
+        snprintf(path, sizeof(path), "%sPreferences", prefDir);
+        SDL_free(prefDir);
+    } else {
+        const char *home = getenv("HOME");
+        if (!home) home = ".";
+        snprintf(path, sizeof(path), "%s/.recklessdrivin_prefs", home);
+    }
+
     return path;
 }
 
