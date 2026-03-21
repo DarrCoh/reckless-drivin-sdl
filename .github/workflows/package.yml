@@ -17,7 +17,7 @@ jobs:
       - uses: actions/upload-artifact@v6
         with:
           name: mac-build-universal
-          path: build/RecklessDrivin-*-mac.dmg
+          path: build/Reckless-Drivin-*-mac.dmg
 
   package-linux:
     runs-on: ${{ matrix.platform.os }}
@@ -43,4 +43,4 @@ jobs:
       - uses: actions/upload-artifact@v6
         with:
           name: linux-build-${{ matrix.platform.name }}
-          path: build/RecklessDrivin-*-linux-${{ matrix.platform.name }}.AppImage
+          path: build/Reckless-Drivin-*-linux-${{ matrix.platform.name }}.AppImage

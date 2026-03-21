@@ -1,6 +1,6 @@
 [Desktop Entry]
 Version=1.0
-Name=RecklessDrivin
+Name=Reckless Drivin'
 Comment=A native SDL2 port of the classic Mac OS racing game
 Exec=RecklessDrivin
 StartupNotify=true

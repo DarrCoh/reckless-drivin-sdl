@@ -82,12 +82,12 @@ cd reckless-drivin-sdl
 ./build-mac-app.sh
 
 # Run (double-click or from terminal)
-open build/RecklessDrivin.app
+open "build/Reckless Drivin'.app"
 ```
 
-The build produces a self-contained `RecklessDrivin.app` bundle with the `Data` file and SDL2 bundled inside, plus a `.dmg` for easy distribution. No SDL2 install required on the recipient's machine.
+The build produces a self-contained `Reckless Drivin'.app` bundle with the `Data` file and SDL2 bundled inside, plus a `.dmg` for easy distribution. No SDL2 install required on the recipient's machine.
 
-Since the app is not notarized, macOS will quarantine it when downloaded. Recipients can either run `xattr -cr /path/to/RecklessDrivin.app` in Terminal, or open it and go to System Settings > Privacy & Security to allow it.
+Since the app is not notarized, macOS will quarantine it when downloaded. Recipients can either run `xattr -cr "/path/to/Reckless Drivin'.app"` in Terminal, or open it and go to System Settings > Privacy & Security to allow it.
 
 ### Build & Run on Linux
 

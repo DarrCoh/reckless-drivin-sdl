@@ -32,4 +32,5 @@ find RecklessDrivin.app -type l -name Headers -exec rm -rf {} +
 
 sw_version="$(sed -n 's/^project(RecklessDrivin VERSION \([0-9.]*\).*/\1/p' ../CMakeLists.txt)"
 
-hdiutil create -fs HFS+ -srcfolder RecklessDrivin.app -volname "RecklessDrivin $sw_version" "RecklessDrivin-$sw_version-mac.dmg"
+mv RecklessDrivin.app "Reckless Drivin'.app"
+hdiutil create -fs HFS+ -srcfolder "Reckless Drivin'.app" -volname "Reckless Drivin' $sw_version" "Reckless-Drivin-$sw_version-mac.dmg"

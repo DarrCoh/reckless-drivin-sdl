@@ -66,6 +66,6 @@ fi
 echo "$appimagetool_hash  $appimagetool_filename" | shasum -a 256 -c
 echo "$runtime_hash  $runtime_filename" | shasum -a 256 -c
 
-./"$appimagetool_filename" --no-appstream --runtime-file "runtime-$system_arch" RecklessDrivin.AppDir "RecklessDrivin-$sw_version-linux-$system_arch.AppImage"
+./"$appimagetool_filename" --no-appstream --runtime-file "runtime-$system_arch" RecklessDrivin.AppDir "Reckless-Drivin-$sw_version-linux-$system_arch.AppImage"
 
 rm -r RecklessDrivin.AppDir
