@@ -53,7 +53,7 @@ void CheckTarget(tObject *theObj)
 	t2DPoint targDist=VEC2D_Difference(P2D(track->track[theObj->target].x,track->track[theObj->target].y),theObj->pos);
 	float sqTargDist=targDist.x*targDist.x+targDist.y*targDist.y;
 	int passed=(theObj->control==kObjectDriveUp||theObj->control==kObjectCopControl)?track->track[theObj->target].y<theObj->pos.y:track->track[theObj->target].y>theObj->pos.y;
-	if(sqTargDist<kTargetSwitchDist*kTargetSwitchDist||passed)
+	if((sqTargDist<kTargetSwitchDist*kTargetSwitchDist||passed) && track->num != 0)
 		theObj->target=(theObj->target+1)%track->num;
 }
 
