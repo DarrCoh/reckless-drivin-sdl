@@ -14,10 +14,10 @@ jobs:
       - name: Compile macOS universal app
         run: ./build-mac-app.sh
 
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         with:
-          name: mac-build-universal
           path: build/Reckless-Drivin-*-mac.dmg
+          archive: false
 
   package-linux:
     runs-on: ${{ matrix.platform.os }}
@@ -40,10 +40,10 @@ jobs:
           sudo apt install -y desktop-file-utils libsdl2-dev
           ./build-linux-app.sh
 
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         with:
-          name: linux-build-${{ matrix.platform.name }}
           path: build/Reckless-Drivin-*-linux-${{ matrix.platform.name }}.AppImage
+          archive: false
 
   package-windows:
     runs-on: windows-latest
