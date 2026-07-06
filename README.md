@@ -6,12 +6,13 @@
 
 [![macOS](https://img.shields.io/github/actions/workflow/status/DarrCoh/reckless-drivin-sdl/build.yml?label=macOS&logo=apple)](https://github.com/DarrCoh/reckless-drivin-sdl/actions/workflows/build.yml)
 [![Linux](https://img.shields.io/github/actions/workflow/status/DarrCoh/reckless-drivin-sdl/build.yml?label=Linux&logo=linux)](https://github.com/DarrCoh/reckless-drivin-sdl/actions/workflows/build.yml)
+[![Windows](https://img.shields.io/github/actions/workflow/status/DarrCoh/reckless-drivin-sdl/build.yml?label=Windows&logo=windows)](https://github.com/DarrCoh/reckless-drivin-sdl/actions/workflows/build.yml)
 
 ### A native SDL2 port of the classic Mac OS racing game
 
 *Originally by [Jonas Echterhoff](https://github.com/jechter/RecklessDrivin) (2000), brought back to life on modern hardware*
 
-**macOS (Apple Silicon & Intel) &bull; Linux &bull; SDL2 &bull; No Emulator Required**
+**macOS (Apple Silicon & Intel) &bull; Windows &bull; Linux &bull; SDL2 &bull; No Emulator Required**
 
 ---
 
@@ -52,7 +53,7 @@ This is the result: a port of Reckless Drivin' with all 10 levels, every screen,
 - **Resizable window:** maintains 4:3 aspect ratio with letterboxing
 - **Persistent preferences:** settings, high scores, lap records, and key bindings saved between sessions
 - **Native macOS app bundle:** builds as a proper `.app` with SDL2 bundled inside; distribute as a DMG or zip it and send to a friend
-- **Broad compatibility:** macOS 11.0+ (Big Sur through current), Linux (x86_64, ARM64)
+- **Broad compatibility:** macOS 11.0+ (Big Sur through current), Windows 10/11 (x64), Linux (x86_64, ARM64)
 - **No external dependencies on macOS:** SDL2 is bundled into the app automatically; no Homebrew or manual installs needed to run
 
 ---
@@ -63,8 +64,8 @@ This is the result: a port of Reckless Drivin' with all 10 levels, every screen,
 
 | | |
 |---|---|
-| **OS** | macOS (Apple Silicon or Intel), Linux |
-| **Compiler** | Clang or GCC (C11) |
+| **OS** | macOS (Apple Silicon or Intel), Windows 10/11, Linux |
+| **Compiler** | Clang, GCC, or MSVC (C11) |
 | **Build tool** | CMake 3.16+ |
 | **Library** | SDL2 |
 
@@ -109,6 +110,30 @@ cmake --build .
 ```
 
 The build produces a standard executable and copies `Data` next to it.
+
+### Build & Run on Windows
+
+```bash
+# Install vcpkg (if not already installed)
+git clone https://github.com/microsoft/vcpkg.git
+cd vcpkg && bootstrap-vcpkg.bat && cd ..
+
+# Install SDL2
+vcpkg install sdl2:x64-windows
+
+# Clone repository
+git clone https://github.com/DarrCoh/reckless-drivin-sdl.git
+
+# Build
+cd reckless-drivin-sdl
+cmake -B build -DCMAKE_TOOLCHAIN_FILE=path/to/vcpkg/scripts/buildsystems/vcpkg.cmake
+cmake --build build --config Release
+
+# Run
+build\Release\RecklessDrivin.exe
+```
+
+Copy `SDL2.dll` from `vcpkg/installed/x64-windows/bin/` next to the exe if distributing.
 
 ---
 

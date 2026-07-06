@@ -96,6 +96,8 @@ if(APPLE)
         MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION}
         MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}
     )
+elseif(WIN32)
+    add_executable(RecklessDrivin WIN32 ${SOURCES})
 else()
     add_executable(RecklessDrivin ${SOURCES})
 endif()
@@ -111,19 +113,33 @@ target_include_directories(RecklessDrivin PRIVATE
 target_compile_definitions(RecklessDrivin PRIVATE SDL_PORT=1)
 
 # Compiler warnings
-target_compile_options(RecklessDrivin PRIVATE -Wall)
+if(MSVC)
+    target_compile_options(RecklessDrivin PRIVATE /W3)
+else()
+    target_compile_options(RecklessDrivin PRIVATE -Wall)
+endif()
 
 # Link libraries
 if(SDL2_FRAMEWORK)
     target_link_libraries(RecklessDrivin PRIVATE ${SDL2_FRAMEWORK}/SDL2)
     target_include_directories(RecklessDrivin PRIVATE ${SDL2_FRAMEWORK}/Headers)
 elseif(TARGET PkgConfig::SDL2)
-    target_link_libraries(RecklessDrivin PRIVATE PkgConfig::SDL2 m)
+    target_link_libraries(RecklessDrivin PRIVATE PkgConfig::SDL2)
 elseif(TARGET SDL2::SDL2)
-    target_link_libraries(RecklessDrivin PRIVATE SDL2::SDL2 m)
+    target_link_libraries(RecklessDrivin PRIVATE SDL2::SDL2)
 else()
-    target_link_libraries(RecklessDrivin PRIVATE ${SDL2_LIBRARIES} m)
+    target_link_libraries(RecklessDrivin PRIVATE ${SDL2_LIBRARIES})
     target_include_directories(RecklessDrivin PRIVATE ${SDL2_INCLUDE_DIRS})
+endif()
+
+# Math library (not needed on MSVC; linked by default)
+if(NOT MSVC)
+    target_link_libraries(RecklessDrivin PRIVATE m)
+endif()
+
+# Windows: link SDL2main for WinMain entry point
+if(WIN32 AND TARGET SDL2::SDL2main)
+    target_link_libraries(RecklessDrivin PRIVATE SDL2::SDL2main)
 endif()
 
 # macOS-specific: link Cocoa framework (needed by SDL2)
@@ -148,4 +164,19 @@ else()
             "$<TARGET_FILE_DIR:RecklessDrivin>/Data"
         COMMENT "Copying Data file to build directory"
     )
+endif()
+
+# Windows: bundle MSVC runtime DLLs next to the exe so users don't need
+# the Visual C++ Redistributable installed separately. Targets Windows 10/11,
+# so the Universal CRT is assumed present and not bundled.
+if(WIN32 AND MSVC)
+    set(CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS_SKIP TRUE)
+    include(InstallRequiredSystemLibraries)
+    foreach(_crt_lib ${CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS})
+        add_custom_command(TARGET RecklessDrivin POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${_crt_lib}" "$<TARGET_FILE_DIR:RecklessDrivin>"
+            VERBATIM
+        )
+    endforeach()
 endif()

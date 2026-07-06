@@ -76,6 +76,13 @@ static const char* FindDataFile(const char *argv0)
     /* Strategy 1: look next to the executable */
     if (argv0) {
         const char *lastSlash = strrchr(argv0, '/');
+#ifdef _WIN32
+        {
+            const char *lastBackslash = strrchr(argv0, '\\');
+            if (lastBackslash && (!lastSlash || lastBackslash > lastSlash))
+                lastSlash = lastBackslash;
+        }
+#endif
         if (lastSlash) {
             size_t dirLen = (size_t)(lastSlash - argv0);
             if (dirLen + 6 < sizeof(path)) {
@@ -88,6 +95,7 @@ static const char* FindDataFile(const char *argv0)
                     return path;
                 }
             }
+#ifdef __APPLE__
             /* Strategy 1b: macOS .app bundle — look in ../Resources/ relative to executable */
             if (dirLen + 20 < sizeof(path)) {
                 memcpy(path, argv0, dirLen);
@@ -98,6 +106,7 @@ static const char* FindDataFile(const char *argv0)
                     return path;
                 }
             }
+#endif
         }
     }
 

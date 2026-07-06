@@ -40,3 +40,18 @@ jobs:
         run: |
           test -f build/RecklessDrivin
           test -f build/Data
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Install SDL2 via vcpkg
+        run: vcpkg install sdl2:x64-windows
+      - name: Build
+        run: |
+          cmake -B build -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake"
+          cmake --build build --config Release
+      - name: Verify binary
+        run: |
+          if (!(Test-Path "build/Release/RecklessDrivin.exe")) { exit 1 }
+          if (!(Test-Path "build/Release/Data")) { exit 1 }

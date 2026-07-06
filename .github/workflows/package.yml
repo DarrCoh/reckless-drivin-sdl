@@ -9,7 +9,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          ref: main
+          ref: ${{ github.ref }}
 
       - name: Compile macOS universal app
         run: ./build-mac-app.sh
@@ -32,7 +32,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          ref: main
+          ref: ${{ github.ref }}
 
       - name: Compile Linux ${{ matrix.platform.name }} app
         run: |
@@ -44,3 +44,36 @@ jobs:
         with:
           name: linux-build-${{ matrix.platform.name }}
           path: build/Reckless-Drivin-*-linux-${{ matrix.platform.name }}.AppImage
+
+  package-windows:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.ref }}
+
+      - name: Install SDL2 via vcpkg
+        run: vcpkg install sdl2:x64-windows
+
+      - name: Build
+        run: |
+          cmake -B build -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake"
+          cmake --build build --config Release
+
+      - name: Package
+        run: |
+          $version = (Select-String -Path CMakeLists.txt -Pattern 'VERSION (\d+\.\d+\.\d+)').Matches.Groups[1].Value
+          mkdir package
+          cp build/Release/RecklessDrivin.exe package/
+          cp build/Release/Data package/
+          cp build/Release/*.dll package/
+          if (!(Test-Path package/SDL2.dll)) {
+              cp "$env:VCPKG_INSTALLATION_ROOT/installed/x64-windows/bin/SDL2.dll" package/
+          }
+          Compress-Archive -Path package/* -DestinationPath "build/Reckless-Drivin-$version-windows-x64.zip"
+
+      - uses: actions/upload-artifact@v6
+        with:
+          name: windows-build-x64
+          path: build/Reckless-Drivin-*-windows-x64.zip
