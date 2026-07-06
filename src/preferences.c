@@ -232,21 +232,22 @@ void Preferences(void)
 
         Platform_Blit2Screen();
 
-        /* --- Handle input --- */
-        if (Platform_IsKeyDown(SDL_SCANCODE_UP)) {
+        /* --- Handle input ---
+         * Navigation accepts OS auto-repeat; activation keys need a fresh
+         * press so keys held across screen transitions cannot re-trigger. */
+        if (Platform_WasKeyTyped(SDL_SCANCODE_UP)) {
             selected = (selected + kPrefCount - 1) % kPrefCount;
-            SDL_Delay(150);
         }
-        if (Platform_IsKeyDown(SDL_SCANCODE_DOWN)) {
+        if (Platform_WasKeyTyped(SDL_SCANCODE_DOWN)) {
             selected = (selected + 1) % kPrefCount;
-            SDL_Delay(150);
         }
 
         int adjust = 0;
-        if (Platform_IsKeyDown(SDL_SCANCODE_LEFT))  { adjust = -1; SDL_Delay(80); }
-        if (Platform_IsKeyDown(SDL_SCANCODE_RIGHT)) { adjust =  1; SDL_Delay(80); }
-        if (Platform_IsKeyDown(SDL_SCANCODE_RETURN) ||
-            Platform_IsKeyDown(SDL_SCANCODE_SPACE)) {
+        if (Platform_WasKeyTyped(SDL_SCANCODE_LEFT))  adjust = -1;
+        if (Platform_WasKeyTyped(SDL_SCANCODE_RIGHT)) adjust =  1;
+        if (Platform_WasKeyPressed(SDL_SCANCODE_RETURN) ||
+            Platform_WasKeyPressed(SDL_SCANCODE_KP_ENTER) ||
+            Platform_WasKeyPressed(SDL_SCANCODE_SPACE)) {
             if (selected == kPrefDone) { done = 1; break; }
             if (selected == kPrefControls) {
                 /* Save current settings before entering controls */
@@ -258,13 +259,11 @@ void Preferences(void)
                 gPrefs.motionBlur = motionBlur;
                 ConfigureInput();
                 SaveFlushEvents();
-                SDL_Delay(200);
                 continue;
             }
             adjust = 1;
-            SDL_Delay(150);
         }
-        if (Platform_IsKeyDown(SDL_SCANCODE_ESCAPE)) {
+        if (Platform_WasKeyPressed(SDL_SCANCODE_ESCAPE)) {
             done = 1; break;
         }
 

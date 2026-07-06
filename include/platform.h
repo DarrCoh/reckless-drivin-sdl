@@ -30,6 +30,12 @@ void Platform_InitInput(void);
 void Platform_ShutdownInput(void);
 void Platform_PollEvents(void);
 int Platform_IsKeyDown(int scancode);
+/* One-shot key events, consumed on read (like Platform_GetMouseClick).
+ * WasKeyPressed: physical press only; a key held across a screen
+ * transition cannot re-trigger until released and pressed again.
+ * WasKeyTyped: press or OS auto-repeat; for hold-to-scroll navigation. */
+int Platform_WasKeyPressed(int scancode);
+int Platform_WasKeyTyped(int scancode);
 int Platform_GetElement(int element);
 int Platform_GetEvent(int *element, int *data);
 void Platform_FlushInput(void);

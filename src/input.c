@@ -371,24 +371,24 @@ void ConfigureInput(void)
             continue;
         }
 
-        if (Platform_IsKeyDown(SDL_SCANCODE_UP)) {
+        /* Navigation accepts OS auto-repeat; activation keys need a fresh
+         * press so the Enter that opened this screen cannot start a rebind. */
+        if (Platform_WasKeyTyped(SDL_SCANCODE_UP)) {
             selected = (selected + kConfigDone) % (kConfigDone + 1);
-            SDL_Delay(150);
         }
-        if (Platform_IsKeyDown(SDL_SCANCODE_DOWN)) {
+        if (Platform_WasKeyTyped(SDL_SCANCODE_DOWN)) {
             selected = (selected + 1) % (kConfigDone + 1);
-            SDL_Delay(150);
         }
-        if (Platform_IsKeyDown(SDL_SCANCODE_RETURN) ||
-            Platform_IsKeyDown(SDL_SCANCODE_SPACE)) {
+        if (Platform_WasKeyPressed(SDL_SCANCODE_RETURN) ||
+            Platform_WasKeyPressed(SDL_SCANCODE_KP_ENTER) ||
+            Platform_WasKeyPressed(SDL_SCANCODE_SPACE)) {
             if (selected == kConfigDone) {
                 done = 1;
             } else {
                 waiting = 1;
             }
-            SDL_Delay(200);
         }
-        if (Platform_IsKeyDown(SDL_SCANCODE_ESCAPE)) {
+        if (Platform_WasKeyPressed(SDL_SCANCODE_ESCAPE)) {
             done = 1;
         }
 

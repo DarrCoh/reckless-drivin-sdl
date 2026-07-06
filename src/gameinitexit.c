@@ -445,34 +445,37 @@ void GetLevelNumber()
 
 		Platform_Blit2Screen();
 
-		/* --- Input --- */
-		if (Platform_IsKeyDown(SDL_SCANCODE_UP) || Platform_IsKeyDown(SDL_SCANCODE_DOWN)) {
-			row = 1 - row;
-			SDL_Delay(180);
+		/* --- Input ---
+		 * Navigation keys accept OS auto-repeat (hold to scroll); confirm
+		 * and cancel need a fresh press, so the Enter still held from the
+		 * Shift+Enter that opened this screen cannot start the game. */
+		{
+			int up = Platform_WasKeyTyped(SDL_SCANCODE_UP);
+			int down = Platform_WasKeyTyped(SDL_SCANCODE_DOWN);
+			if (up || down)
+				row = 1 - row;
 		}
-		if (Platform_IsKeyDown(SDL_SCANCODE_LEFT)) {
+		if (Platform_WasKeyTyped(SDL_SCANCODE_LEFT)) {
 			if (row == 0) {
 				level--;
 				if (level < 1) level = maxLevel;
 			} else {
 				vehIdx = (vehIdx + (int)kNumVehicles - 1) % (int)kNumVehicles;
 			}
-			SDL_Delay(150);
 		}
-		if (Platform_IsKeyDown(SDL_SCANCODE_RIGHT)) {
+		if (Platform_WasKeyTyped(SDL_SCANCODE_RIGHT)) {
 			if (row == 0) {
 				level++;
 				if (level > maxLevel) level = 1;
 			} else {
 				vehIdx = (vehIdx + 1) % (int)kNumVehicles;
 			}
-			SDL_Delay(150);
 		}
-		if (Platform_IsKeyDown(SDL_SCANCODE_RETURN) ||
-		    Platform_IsKeyDown(SDL_SCANCODE_KP_ENTER)) {
+		if (Platform_WasKeyPressed(SDL_SCANCODE_RETURN) ||
+		    Platform_WasKeyPressed(SDL_SCANCODE_KP_ENTER)) {
 			done = 1;
 		}
-		if (Platform_IsKeyDown(SDL_SCANCODE_ESCAPE)) {
+		if (Platform_WasKeyPressed(SDL_SCANCODE_ESCAPE)) {
 			cancelled = 1;
 			done = 1;
 		}

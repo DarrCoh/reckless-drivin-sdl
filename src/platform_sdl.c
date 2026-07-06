@@ -278,6 +278,14 @@ static int sMouseClicked = 0;
 static int sMouseClickX  = 0;
 static int sMouseClickY  = 0;
 
+/* Key press tracking (edge-triggered: set on KEYDOWN, cleared after read).
+ * sKeyPressed records physical presses only; sKeyTyped also records OS
+ * auto-repeat. Kept separate so confirm keys can never fire from a key
+ * that was already held when a screen opened, while navigation keys still
+ * get hold-to-scroll behavior. */
+static Uint8 sKeyPressed[SDL_NUM_SCANCODES];
+static Uint8 sKeyTyped[SDL_NUM_SCANCODES];
+
 /* Optional gamepad. */
 static SDL_GameController *sGameController = NULL;
 
@@ -430,9 +438,19 @@ void Platform_PollEvents(void)
             break;
 
         case SDL_KEYDOWN:
+            /* Fullscreen shortcuts are handled here and swallowed so the
+             * Enter of Alt+Enter never surfaces as a menu key press. */
             if (ev.key.keysym.scancode == SDL_SCANCODE_F11 ||
-                ((ev.key.keysym.mod & KMOD_ALT) && ev.key.keysym.scancode == SDL_SCANCODE_RETURN))
-                Platform_ToggleFullscreen();
+                ((ev.key.keysym.mod & KMOD_ALT) && ev.key.keysym.scancode == SDL_SCANCODE_RETURN)) {
+                if (!ev.key.repeat)
+                    Platform_ToggleFullscreen();
+                break;
+            }
+            if (ev.key.keysym.scancode < SDL_NUM_SCANCODES) {
+                if (!ev.key.repeat)
+                    sKeyPressed[ev.key.keysym.scancode] = 1;
+                sKeyTyped[ev.key.keysym.scancode] = 1;
+            }
             break;
 
         case SDL_MOUSEBUTTONDOWN:
@@ -461,6 +479,24 @@ int Platform_IsKeyDown(int scancode)
     const Uint8 *state = SDL_GetKeyboardState(NULL);
     if (scancode >= 0 && scancode < SDL_NUM_SCANCODES)
         return state[scancode] ? 1 : 0;
+    return 0;
+}
+
+int Platform_WasKeyPressed(int scancode)
+{
+    if (scancode >= 0 && scancode < SDL_NUM_SCANCODES && sKeyPressed[scancode]) {
+        sKeyPressed[scancode] = 0;
+        return 1;
+    }
+    return 0;
+}
+
+int Platform_WasKeyTyped(int scancode)
+{
+    if (scancode >= 0 && scancode < SDL_NUM_SCANCODES && sKeyTyped[scancode]) {
+        sKeyTyped[scancode] = 0;
+        return 1;
+    }
     return 0;
 }
 
@@ -570,8 +606,10 @@ void Platform_FlushInput(void)
     for (int i = 0; i < kNumElements; i++)
         sElementPrevState[i] = Platform_GetElement(i);
 
-    /* Clear any pending mouse click. */
+    /* Clear any pending mouse click and unconsumed key presses. */
     sMouseClicked = 0;
+    memset(sKeyPressed, 0, sizeof(sKeyPressed));
+    memset(sKeyTyped, 0, sizeof(sKeyTyped));
 }
 
 int Platform_ShouldQuit(void)
@@ -615,6 +653,10 @@ SDL_Scancode Platform_WaitForKey(void)
             }
             if (ev.type == SDL_KEYDOWN) {
                 SDL_Scancode sc = ev.key.keysym.scancode;
+                /* Ignore auto-repeat: a key held since before this prompt
+                 * opened must not bind itself. */
+                if (ev.key.repeat)
+                    continue;
                 /* Ignore pure modifier keys */
                 if (sc == SDL_SCANCODE_LSHIFT || sc == SDL_SCANCODE_RSHIFT ||
                     sc == SDL_SCANCODE_LCTRL  || sc == SDL_SCANCODE_RCTRL  ||
