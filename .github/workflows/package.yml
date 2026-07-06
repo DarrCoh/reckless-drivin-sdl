@@ -73,7 +73,7 @@ jobs:
           }
           Compress-Archive -Path package/* -DestinationPath "build/Reckless-Drivin-$version-windows-x64.zip"
 
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         with:
-          name: windows-build-x64
           path: build/Reckless-Drivin-*-windows-x64.zip
+          archive: false
