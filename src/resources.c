@@ -220,21 +220,29 @@ Handle Resources_Get(FourCharCode type, int id) {
             UInt32 res_length = read_u32(entry_ptr);
             const UInt8 *res_data = entry_ptr + 4;
 
-            /* Allocate a tracked handle and copy the data into it */
-            if (gTrackedCount >= MAX_TRACKED_HANDLES) {
+            /* Find a free slot, reusing ones freed by Resources_Release,
+               before extending the pool. Without reuse the pool leaks a slot
+               per load and is exhausted after MAX_TRACKED_HANDLES loads. */
+            int slot = -1;
+            for (int s = 0; s < gTrackedCount; s++) {
+                if (gTracked[s].data == NULL) { slot = s; break; }
+            }
+            if (slot < 0 && gTrackedCount >= MAX_TRACKED_HANDLES) {
                 fprintf(stderr, "Resources_Get: tracked handle pool exhausted\n");
                 return NULL;
             }
 
-            int slot = gTrackedCount++;
-            gTracked[slot].size = (long)res_length;
-            gTracked[slot].data = (char *)malloc(res_length);
-            if (!gTracked[slot].data) {
+            char *buf = (char *)malloc(res_length);
+            if (!buf) {
                 fprintf(stderr, "Resources_Get: out of memory for %u bytes\n",
                         (unsigned)res_length);
-                gTrackedCount--;
                 return NULL;
             }
+
+            if (slot < 0)
+                slot = gTrackedCount++;
+            gTracked[slot].size = (long)res_length;
+            gTracked[slot].data = buf;
             memcpy(gTracked[slot].data, res_data, res_length);
 
             /* Return a Handle (char**) pointing to the data pointer inside
