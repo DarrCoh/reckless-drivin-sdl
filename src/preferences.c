@@ -281,6 +281,7 @@ void Preferences(void)
                         if (i == kPrefControls) {
                             gPrefs.sound = snd;
                             gPrefs.engineSound = engSnd;
+                            gPrefs.skidSound = skidSnd;
                             gPrefs.hqSound = hqSnd;
                             gPrefs.volume = volume;
                             gPrefs.motionBlur = motionBlur;
