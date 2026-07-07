@@ -95,9 +95,11 @@ static inline SInt16 read_s16(const UInt8 *p) {
 
 /* True if the byte range [off, off+len) lies within the loaded file. All
    offsets and lengths in the resource fork come from the (untrusted) file,
-   so every dereference is gated on this. 64-bit math avoids overflow. */
-static inline int RangeInFile(long off, long len) {
-    return off >= 0 && len >= 0 && off + len <= gFileSize;
+   so every dereference is gated on this. Parameters are long long so the
+   off+len sum of two UInt32-derived values cannot overflow, including where
+   long is 32-bit (Windows LLP64). */
+static inline int RangeInFile(long long off, long long len) {
+    return off >= 0 && len >= 0 && off + len <= (long long)gFileSize;
 }
 
 /* ---- Public API ---- */
@@ -158,7 +160,7 @@ int Resources_Init(const char *dataFilePath) {
 
     /* map + 24..25: type_list_offset (from map start) */
     UInt16 type_list_offset = read_u16(map + 24);
-    long   type_list_abs    = (long)map_offset + type_list_offset;
+    long long type_list_abs = (long long)map_offset + type_list_offset;
 
     if (!RangeInFile(type_list_abs, 2)) {
         fprintf(stderr, "Resources_Init: type list out of range\n");
@@ -174,26 +176,26 @@ int Resources_Init(const char *dataFilePath) {
     /* First pass: count total resources to allocate the entry array. Each
        declared resource needs a 12-byte ref entry in the file, so the total
        cannot exceed gFileSize/12; that also bounds the calloc. */
-    long total_resources = 0;
+    long long total_resources = 0;
     for (int t = 0; t < num_types; t++) {
-        long te_abs = type_list_abs + 2 + (long)t * 8;  /* 8 bytes per type entry */
+        long long te_abs = type_list_abs + 2 + (long long)t * 8;  /* 8 bytes per type entry */
         if (!RangeInFile(te_abs, 8)) {
             fprintf(stderr, "Resources_Init: type entry %d out of range\n", t);
             free(gFileData); gFileData = NULL;
             return 0;
         }
         UInt16 num_res_m1 = read_u16(gFileData + te_abs + 4);
-        total_resources += (long)num_res_m1 + 1;
+        total_resources += (long long)num_res_m1 + 1;
     }
-    if (total_resources <= 0 || total_resources > gFileSize / 12) {
-        fprintf(stderr, "Resources_Init: implausible resource count %ld\n", total_resources);
+    if (total_resources <= 0 || total_resources > (long long)gFileSize / 12) {
+        fprintf(stderr, "Resources_Init: implausible resource count %lld\n", total_resources);
         free(gFileData); gFileData = NULL;
         return 0;
     }
 
     gEntries = (ResourceEntry *)calloc((size_t)total_resources, sizeof(ResourceEntry));
     if (!gEntries) {
-        fprintf(stderr, "Resources_Init: out of memory for %ld entries\n", total_resources);
+        fprintf(stderr, "Resources_Init: out of memory for %lld entries\n", total_resources);
         free(gFileData);
         gFileData = NULL;
         return 0;
@@ -203,17 +205,17 @@ int Resources_Init(const char *dataFilePath) {
     /* Second pass: read each type and its reference list */
     int idx = 0;
     for (int t = 0; t < num_types; t++) {
-        long te_abs = type_list_abs + 2 + (long)t * 8;
+        long long te_abs = type_list_abs + 2 + (long long)t * 8;
         const UInt8 *te = gFileData + te_abs;  /* bounds-checked in pass 1 */
         FourCharCode restype = read_u32(te);
         UInt16 num_res_m1    = read_u16(te + 4);
         UInt16 ref_offset    = read_u16(te + 6);  /* from type_list start */
         int num_res          = (int)num_res_m1 + 1;
 
-        long ref_list_abs = type_list_abs + ref_offset;
+        long long ref_list_abs = type_list_abs + ref_offset;
 
         for (int r = 0; r < num_res; r++) {
-            long re_abs = ref_list_abs + (long)r * 12;  /* 12 bytes per ref entry */
+            long long re_abs = ref_list_abs + (long long)r * 12;  /* 12 bytes per ref entry */
             if (idx >= gEntryCount || !RangeInFile(re_abs, 12)) {
                 fprintf(stderr, "Resources_Init: ref entry out of range\n");
                 free(gEntries); gEntries = NULL; gEntryCount = 0;
@@ -259,13 +261,13 @@ Handle Resources_Get(FourCharCode type, int id) {
 
             /* The offset and the length prefix are both from the file; verify
                the 4-byte prefix, then the payload, lie within it before use. */
-            if (!RangeInFile((long)abs_offset, 4)) {
+            if (!RangeInFile((long long)abs_offset, 4)) {
                 fprintf(stderr, "Resources_Get: resource offset out of range\n");
                 return NULL;
             }
             const UInt8 *entry_ptr = gFileData + abs_offset;
             UInt32 res_length = read_u32(entry_ptr);
-            if (!RangeInFile((long)abs_offset + 4, (long)res_length)) {
+            if (!RangeInFile((long long)abs_offset + 4, (long long)res_length)) {
                 fprintf(stderr, "Resources_Get: resource length out of range\n");
                 return NULL;
             }
