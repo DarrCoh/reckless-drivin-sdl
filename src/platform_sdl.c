@@ -384,6 +384,28 @@ static void WindowToLogical(int winX, int winY, int *logX, int *logY)
     *logY = (int)((winY - offsetY) / scale);
 }
 
+/* Open/close the active game controller on hotplug. Shared by the event
+ * pump and the modal key-wait loop so a device change is never lost. */
+static void HandleControllerDeviceEvent(const SDL_Event *ev)
+{
+    if (ev->type == SDL_CONTROLLERDEVICEADDED) {
+        if (!sGameController) {
+            sGameController = SDL_GameControllerOpen(ev->cdevice.which);
+            if (sGameController)
+                fprintf(stderr, "[platform] Controller added: %s\n",
+                        SDL_GameControllerName(sGameController));
+        }
+    } else if (ev->type == SDL_CONTROLLERDEVICEREMOVED) {
+        if (sGameController &&
+            ev->cdevice.which == SDL_JoystickInstanceID(
+                SDL_GameControllerGetJoystick(sGameController))) {
+            SDL_GameControllerClose(sGameController);
+            sGameController = NULL;
+            fprintf(stderr, "[platform] Controller removed\n");
+        }
+    }
+}
+
 void Platform_PollEvents(void)
 {
     SDL_Event ev;
@@ -424,24 +446,8 @@ void Platform_PollEvents(void)
             break;
 
         case SDL_CONTROLLERDEVICEADDED:
-            if (!sGameController) {
-                sGameController = SDL_GameControllerOpen(ev.cdevice.which);
-                if (sGameController) {
-                    fprintf(stderr, "[platform] Controller added: %s\n",
-                            SDL_GameControllerName(sGameController));
-                }
-            }
-            break;
-
         case SDL_CONTROLLERDEVICEREMOVED:
-            if (sGameController &&
-                ev.cdevice.which == SDL_JoystickInstanceID(
-                    SDL_GameControllerGetJoystick(sGameController)))
-            {
-                SDL_GameControllerClose(sGameController);
-                sGameController = NULL;
-                fprintf(stderr, "[platform] Controller removed\n");
-            }
+            HandleControllerDeviceEvent(&ev);
             break;
 
         default:
@@ -553,8 +559,12 @@ int Platform_GetEvent(int *element, int *data)
 
 void Platform_FlushInput(void)
 {
-    /* Drain the SDL event queue. */
-    SDL_FlushEvents(SDL_FIRSTEVENT, SDL_LASTEVENT);
+    /* Discard pending keyboard, text and mouse input only. A full flush
+     * (SDL_FIRSTEVENT..SDL_LASTEVENT) also dropped SDL_QUIT and controller
+     * hotplug events; losing a CONTROLLERDEVICEREMOVED left the pad handle
+     * stale so it could never be reopened for the rest of the session. */
+    SDL_FlushEvents(SDL_KEYDOWN, SDL_KEYMAPCHANGED);
+    SDL_FlushEvents(SDL_MOUSEMOTION, SDL_MOUSEWHEEL);
 
     /* Reset edge-detection state so no spurious events fire next frame. */
     for (int i = 0; i < kNumElements; i++)
@@ -588,14 +598,20 @@ SDL_Scancode Platform_GetElementKey(int element)
 
 SDL_Scancode Platform_WaitForKey(void)
 {
-    /* Block until a non-modifier key is pressed. Return 0 if ESC pressed. */
-    SDL_FlushEvents(SDL_FIRSTEVENT, SDL_LASTEVENT);
+    /* Block until a non-modifier key is pressed. Return 0 if ESC pressed.
+     * Flush only pending keyboard input so a queued SDL_QUIT is not lost. */
+    SDL_FlushEvents(SDL_KEYDOWN, SDL_KEYMAPCHANGED);
     for (;;) {
         SDL_Event ev;
         while (SDL_PollEvent(&ev)) {
             if (ev.type == SDL_QUIT) {
                 sQuitRequested = 1;
                 return SDL_SCANCODE_UNKNOWN;
+            }
+            if (ev.type == SDL_CONTROLLERDEVICEADDED ||
+                ev.type == SDL_CONTROLLERDEVICEREMOVED) {
+                HandleControllerDeviceEvent(&ev);
+                continue;
             }
             if (ev.type == SDL_KEYDOWN) {
                 SDL_Scancode sc = ev.key.keysym.scancode;
