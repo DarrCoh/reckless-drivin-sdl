@@ -509,7 +509,9 @@ void FireWeapon(tObject *shooter,int weaponID)
 
 static inline void MoveObject(tObject *theObj)
 {
-	if(*(double*)(&theObj->velo))
+	/* Nonzero velocity. Reading the two floats through a double lvalue is
+	 * strict-aliasing UB (and mis-tests velo=(0,-0)); compare the components. */
+	if(theObj->velo.x!=0||theObj->velo.y!=0)
 	{
 		theObj->pos=VEC2D_Sum(theObj->pos,VEC2D_Scale(theObj->velo,kScale*kFrameDuration));
 		if(theObj->pos.y>*gRoadLenght*2)
