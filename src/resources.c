@@ -93,6 +93,13 @@ static inline SInt16 read_s16(const UInt8 *p) {
     return (SInt16)read_u16(p);
 }
 
+/* True if the byte range [off, off+len) lies within the loaded file. All
+   offsets and lengths in the resource fork come from the (untrusted) file,
+   so every dereference is gated on this. 64-bit math avoids overflow. */
+static inline int RangeInFile(long off, long len) {
+    return off >= 0 && len >= 0 && off + len <= gFileSize;
+}
+
 /* ---- Public API ---- */
 
 int Resources_Init(const char *dataFilePath) {
@@ -106,6 +113,15 @@ int Resources_Init(const char *dataFilePath) {
     fseek(fp, 0, SEEK_END);
     gFileSize = ftell(fp);
     fseek(fp, 0, SEEK_SET);
+
+    /* Need at least the 16-byte resource-fork header. Also guards a failed
+       ftell (-1) from reaching malloc as a huge size. */
+    if (gFileSize < 16) {
+        fprintf(stderr, "Resources_Init: '%s' too small (%ld bytes)\n",
+                dataFilePath, gFileSize);
+        fclose(fp);
+        return 0;
+    }
 
     /* Read the entire file into memory */
     gFileData = (UInt8 *)malloc(gFileSize);
@@ -132,52 +148,79 @@ int Resources_Init(const char *dataFilePath) {
     gDataSectionOffset = data_offset;
 
     /* ---- Parse the resource map ---- */
+    /* Need bytes up to the type_list_offset field at map + 24..25. */
+    if (!RangeInFile(map_offset, 28)) {
+        fprintf(stderr, "Resources_Init: resource map out of range\n");
+        free(gFileData); gFileData = NULL;
+        return 0;
+    }
     const UInt8 *map = gFileData + map_offset;
 
-    /* map + 0..15 : copy of header (skip)
-       map + 16..19: next resource map handle (skip)
-       map + 20..21: file ref num (skip)
-       map + 22..23: file attributes (skip)
-       map + 24..25: type_list_offset (from map start)
-       map + 26..27: name_list_offset (from map start) */
+    /* map + 24..25: type_list_offset (from map start) */
     UInt16 type_list_offset = read_u16(map + 24);
+    long   type_list_abs    = (long)map_offset + type_list_offset;
 
-    const UInt8 *type_list = map + type_list_offset;
+    if (!RangeInFile(type_list_abs, 2)) {
+        fprintf(stderr, "Resources_Init: type list out of range\n");
+        free(gFileData); gFileData = NULL;
+        return 0;
+    }
+    const UInt8 *type_list = gFileData + type_list_abs;
 
     /* Number of types minus one (stored as uint16 big-endian) */
     UInt16 num_types_m1 = read_u16(type_list);
     int num_types = (int)num_types_m1 + 1;
 
-    /* First pass: count total resources to allocate the entry array */
-    int total_resources = 0;
+    /* First pass: count total resources to allocate the entry array. Each
+       declared resource needs a 12-byte ref entry in the file, so the total
+       cannot exceed gFileSize/12; that also bounds the calloc. */
+    long total_resources = 0;
     for (int t = 0; t < num_types; t++) {
-        const UInt8 *te = type_list + 2 + t * 8;  /* each type entry is 8 bytes */
-        UInt16 num_res_m1 = read_u16(te + 4);
-        total_resources += (int)num_res_m1 + 1;
+        long te_abs = type_list_abs + 2 + (long)t * 8;  /* 8 bytes per type entry */
+        if (!RangeInFile(te_abs, 8)) {
+            fprintf(stderr, "Resources_Init: type entry %d out of range\n", t);
+            free(gFileData); gFileData = NULL;
+            return 0;
+        }
+        UInt16 num_res_m1 = read_u16(gFileData + te_abs + 4);
+        total_resources += (long)num_res_m1 + 1;
+    }
+    if (total_resources <= 0 || total_resources > gFileSize / 12) {
+        fprintf(stderr, "Resources_Init: implausible resource count %ld\n", total_resources);
+        free(gFileData); gFileData = NULL;
+        return 0;
     }
 
-    gEntries = (ResourceEntry *)calloc(total_resources, sizeof(ResourceEntry));
+    gEntries = (ResourceEntry *)calloc((size_t)total_resources, sizeof(ResourceEntry));
     if (!gEntries) {
-        fprintf(stderr, "Resources_Init: out of memory for %d entries\n", total_resources);
+        fprintf(stderr, "Resources_Init: out of memory for %ld entries\n", total_resources);
         free(gFileData);
         gFileData = NULL;
         return 0;
     }
-    gEntryCount = total_resources;
+    gEntryCount = (int)total_resources;
 
     /* Second pass: read each type and its reference list */
     int idx = 0;
     for (int t = 0; t < num_types; t++) {
-        const UInt8 *te = type_list + 2 + t * 8;
+        long te_abs = type_list_abs + 2 + (long)t * 8;
+        const UInt8 *te = gFileData + te_abs;  /* bounds-checked in pass 1 */
         FourCharCode restype = read_u32(te);
         UInt16 num_res_m1    = read_u16(te + 4);
         UInt16 ref_offset    = read_u16(te + 6);  /* from type_list start */
         int num_res          = (int)num_res_m1 + 1;
 
-        const UInt8 *ref_list = type_list + ref_offset;
+        long ref_list_abs = type_list_abs + ref_offset;
 
         for (int r = 0; r < num_res; r++) {
-            const UInt8 *re = ref_list + r * 12;  /* each ref entry is 12 bytes */
+            long re_abs = ref_list_abs + (long)r * 12;  /* 12 bytes per ref entry */
+            if (idx >= gEntryCount || !RangeInFile(re_abs, 12)) {
+                fprintf(stderr, "Resources_Init: ref entry out of range\n");
+                free(gEntries); gEntries = NULL; gEntryCount = 0;
+                free(gFileData); gFileData = NULL;
+                return 0;
+            }
+            const UInt8 *re = gFileData + re_abs;
             SInt16 res_id           = read_s16(re + 0);
             /* name_offset at re+2: 0xFFFF means no name (unused here) */
             UInt32 attrs_and_offset = read_u32(re + 4);
@@ -214,10 +257,18 @@ Handle Resources_Get(FourCharCode type, int id) {
                gEntries[i].data_offset is the offset within that section. */
             UInt32 abs_offset = gDataSectionOffset + gEntries[i].data_offset;
 
-            /* The resource data at this location starts with a 4-byte big-endian
-               length prefix, followed by the raw resource bytes. */
+            /* The offset and the length prefix are both from the file; verify
+               the 4-byte prefix, then the payload, lie within it before use. */
+            if (!RangeInFile((long)abs_offset, 4)) {
+                fprintf(stderr, "Resources_Get: resource offset out of range\n");
+                return NULL;
+            }
             const UInt8 *entry_ptr = gFileData + abs_offset;
             UInt32 res_length = read_u32(entry_ptr);
+            if (!RangeInFile((long)abs_offset + 4, (long)res_length)) {
+                fprintf(stderr, "Resources_Get: resource length out of range\n");
+                return NULL;
+            }
             const UInt8 *res_data = entry_ptr + 4;
 
             /* Find a free slot, reusing ones freed by Resources_Release,
