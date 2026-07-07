@@ -234,7 +234,9 @@ void DrawRoadZoomed(float xDrawStart,float yDrawStart,float zoom)
 		float ceilRoadLine=ceil(worldY*0.5);
 		float floorRoadLine=floor(worldY*0.5);
 		float floorPerc=ceilRoadLine-worldY*0.5;
-		tRoadSeg roadData;
+		int roadData[4]; /* SInt32: storing an out-of-range clip position into
+		                    an SInt16 is UB and disorders the spans, overrunning
+		                    the framebuffer; only the on-disk road data is SInt16 */
 		tRoad ceilRoad=(gRoadData+(int)(ceilRoadLine));
 		tRoad floorRoad=(gRoadData+(int)(floorRoadLine));
 		int ceilSplit=(*ceilRoad)[1]!=(*ceilRoad)[2];
@@ -337,7 +339,9 @@ void DrawRoadZoomed16(float xDrawStart,float yDrawStart,float zoom)
 		float ceilRoadLine=ceil(worldY*0.5);
 		float floorRoadLine=floor(worldY*0.5);
 		float floorPerc=ceilRoadLine-worldY*0.5;
-		tRoadSeg roadData;
+		int roadData[4]; /* SInt32: storing an out-of-range clip position into
+		                    an SInt16 is UB and disorders the spans, overrunning
+		                    the framebuffer; only the on-disk road data is SInt16 */
 		tRoad ceilRoad=(gRoadData+(int)(ceilRoadLine));
 		tRoad floorRoad=(gRoadData+(int)(floorRoadLine));
 		int ceilSplit=(*ceilRoad)[1]!=(*ceilRoad)[2];
