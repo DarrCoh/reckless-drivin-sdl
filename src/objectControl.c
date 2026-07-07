@@ -81,7 +81,7 @@ void ObjectFollow(tObject *theObj,tTrackInfoSeg *target,tInputData *input)
 		if(!(target->flags&kTargetNoStop)&&!((*objType).flags&kObjectHeliFlag))
 		{
 			int dist;
-			if(dist=GetCloseCar(VEC2D_Sum(theObj->pos,VEC2D_Scale(objDir,kMinCarDist*0.5*kScale)))<kScale*kScale*5*5)
+			if((dist=GetCloseCar(VEC2D_Sum(theObj->pos,VEC2D_Scale(objDir,kMinCarDist*0.5*kScale))))<kScale*kScale*5*5)
 				input->brake=0.1;
 			else if(dist<kScale*kScale*kMinCarDist*kMinCarDist*0.5*0.5)
 			{
