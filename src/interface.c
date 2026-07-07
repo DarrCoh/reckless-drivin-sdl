@@ -459,7 +459,7 @@ static int ShiftHeld(void)
 	       Platform_IsKeyDown(SDL_SCANCODE_RSHIFT);
 }
 
-static void HandleCommand(int cmd)
+static void HandleCommand(int cmd, int shiftHeld)
 {
 	switch(cmd)
 	{
@@ -469,7 +469,7 @@ static void HandleCommand(int cmd)
 			RestoreMenuScreen();
 			break;
 		case kStartGameButton:
-			StartGame(ShiftHeld());
+			StartGame(shiftHeld);
 			break;
 		case kPrefsButton:
 			Preferences();
@@ -495,17 +495,20 @@ static void HandleCommand(int cmd)
 /* Show press feedback for a button, then execute the command */
 static void ActivateButton(int button)
 {
+	/* Sample Shift at the moment of activation so the level select cheat
+	 * triggers even if the chord is released during the press animation. */
+	int shiftHeld = ShiftHeld();
 	if (sMenuImagesLoaded && button >= 0 && button < (int)kNumButtons) {
 		BlitButtonRect(button, sMenuPressed);
 		Platform_Blit2Screen();
 		SimplePlaySound(147);
 		SDL_Delay(100);
-		/* Refresh input state after the delay: this doubles as a grace
-		 * period for the level select cheat, so a rolled Shift+Enter
-		 * chord counts even when Enter arrived a frame before Shift. */
+		/* Re-read after the delay as a grace period for a rolled Shift+Enter
+		 * chord where Enter arrived a frame before Shift. */
 		Platform_PollEvents();
+		shiftHeld = shiftHeld || ShiftHeld();
 	}
-	HandleCommand(button);
+	HandleCommand(button, shiftHeld);
 	/* Restore menu after returning from the command */
 	if (!gGameOn && !gExit) {
 		sHoverButton = kNoButton;
