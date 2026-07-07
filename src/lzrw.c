@@ -82,6 +82,9 @@ static void lzrw3a_decompress(const uint8_t *p_src_first, uint32_t src_len,
         uint32_t unroll;
 
         if (control == 1) {
+            /* Refill reads 2 control bytes; stop on a truncated stream. */
+            if (p_src + 2 > p_src_post)
+                goto done;
             control = 0x10000 | *p_src++;
             control |= (*p_src++) << 8;
         }
@@ -96,6 +99,9 @@ static void lzrw3a_decompress(const uint8_t *p_src_first, uint32_t src_len,
                 uint8_t *p_ziv = p_dst;
                 uint32_t index;
 
+                /* Copy item reads 2 source bytes; stop on a truncated stream. */
+                if (p_src + 2 > p_src_post)
+                    goto done;
                 lenmt = *p_src++;
                 index = ((lenmt & 0xF0) << 4) | *p_src++;
                 p = hash[index];
@@ -127,8 +133,8 @@ static void lzrw3a_decompress(const uint8_t *p_src_first, uint32_t src_len,
                 hash[(index & (~DEPTH_MASK)) + cycle] = p_ziv;
                 cycle = (cycle + 1) & DEPTH_MASK;
             } else {
-                /* Literal item */
-                if (p_dst >= p_dst_end)
+                /* Literal item reads 1 source byte and writes 1 output byte. */
+                if (p_src >= p_src_post || p_dst >= p_dst_end)
                     goto done;
                 *p_dst++ = *p_src++;
 
