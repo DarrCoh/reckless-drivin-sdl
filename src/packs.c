@@ -22,6 +22,11 @@ UInt32 CryptData(UInt32 *data,UInt32 len)
 	   byte-swap the key so the XOR produces the same byte pattern. */
 	UInt32 xorKey=SWAP32(gKey);
 #endif
+	/* len is an untrusted resource size; without this guard a resource
+	 * smaller than the uncrypted header underflows the unsigned subtraction
+	 * and the loop XORs far past the buffer. */
+	if(len<kUnCryptedHeader)
+		return 0;
 	data+=kUnCryptedHeader/4;
 	len-=kUnCryptedHeader;
 	while(len>=4)
