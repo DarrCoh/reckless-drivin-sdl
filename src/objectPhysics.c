@@ -352,8 +352,7 @@ int CheckObjectMotion(tObject *theObj)
 		return true;
 	if(theObj->input.throttle)
 		return true;
-	if(!theObj->rotVelo)
-		return false;
+	return theObj->rotVelo!=0;
 }
 
 void MakeSmoke(tObject *theObj)
