@@ -361,7 +361,9 @@ void ConfigureInput(void)
         /* --- Input --- */
         if (waiting) {
             SDL_Scancode sc = Platform_WaitForKey();
-            if (sc != SDL_SCANCODE_UNKNOWN) {
+            /* keyCodes is a byte in prefs; refuse scancodes >= 256 (media/AC
+             * keys) so a saved binding cannot round-trip to a different key. */
+            if (sc != SDL_SCANCODE_UNKNOWN && sc < 256) {
                 Platform_SetElementKey(selected, sc);
             }
             waiting = 0;
