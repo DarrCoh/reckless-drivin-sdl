@@ -232,7 +232,11 @@ void Input(tInputData **data)
             gFire = eventData;
             break;
         case kAbort:
-            gEndGame = true;
+            /* Fire on the press edge only. Acting on the release would abort
+             * the level when a held Escape (e.g. used to dismiss the pause
+             * screen) is let go after gameplay resumes. */
+            if (eventData)
+                gEndGame = true;
             break;
         case kPause:
             if (eventData)
