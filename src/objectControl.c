@@ -110,10 +110,16 @@ void ObjectFollow(tObject *theObj,tTrackInfoSeg *target,tInputData *input)
 void ObjectStartChase(tObject *theObj,int distance,float velo)
 {
 	int target;
+	if(gTrackUp->num<2)
+		return;
 	for(target=1;
 		(target<gTrackUp->num)&&(gTrackUp->track[target].y<gPlayerObj->pos.y-distance);
 		target++);
 	target++;
+	/* The loop can leave target at num and the ++ pushes it to num+1; the
+	 * track[target]/track[target-1] reads below need target <= num-1. */
+	if(target>=gTrackUp->num)
+		target=gTrackUp->num-1;
 	theObj->target=target;
 	theObj->control=kObjectCopControl;
 	theObj->pos.y=gPlayerObj->pos.y-kStartChaseDist*kScale;
