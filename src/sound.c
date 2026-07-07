@@ -17,6 +17,7 @@
 #include "random.h"
 #include "vec2d.h"
 #include <math.h>
+#include <stddef.h>
 #include <stdio.h>
 
 /* ======================================================================== */
@@ -195,6 +196,17 @@ static const UInt8 *GetSampleData(const tSound *s, int sampleIndex,
 {
     UInt32 numSamples = SoundNumSamples(s);
     if (sampleIndex < 0 || (UInt32)sampleIndex >= numSamples) {
+        *outLen = 0;
+        *outPitchAdj = 1.0f;
+        *outBitsPerSample = 8;
+        return NULL;
+    }
+
+    /* numSamples is itself an untrusted field, so the offsets[] table it
+     * sizes may extend past the entry. Verify the table fits before indexing
+     * it, otherwise SoundOffset reads out of bounds. */
+    if ((long long)offsetof(tSound, offsets) + (long long)numSamples * sizeof(UInt32)
+            > (long long)totalEntrySize) {
         *outLen = 0;
         *outPitchAdj = 1.0f;
         *outBitsPerSample = 8;
