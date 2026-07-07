@@ -280,6 +280,12 @@ static int RenderPICTToFramebuffer(const UInt8 *data, long dataSize)
 	UInt8 rowBuf[SCREEN_WIDTH * 2]; /* max decompressed row */
 	int fbRowPixels = rowBytes / 2;
 
+	/* pmRowBytes is an independent field (up to 0x3FFF); it bounds the
+	 * memset and the UnpackBits writes into rowBuf, so reject any row that
+	 * would not fit rather than overflow the stack buffer. */
+	if (pmRowBytes == 0 || pmRowBytes > (int)sizeof(rowBuf))
+		return 0;
+
 	for (int y = 0; y < picHeight; y++) {
 		if (pos >= dataSize) break;
 
