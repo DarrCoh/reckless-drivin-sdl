@@ -60,6 +60,9 @@ void ShowHighScores(int hilite)
 	FadeScreen(1);
 	ScreenUpdate();
 	FadeScreen(0);
+	/* The fades pump events; drop anything pressed during them so it does
+	 * not linger and activate a menu button on return. */
+	SaveFlushEvents();
 }
 
 extern int gOSX;
