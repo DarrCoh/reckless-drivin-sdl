@@ -51,7 +51,7 @@ static inline Boolean CheckFrameTime()
 	optFrameCount=curMS*kCalcFPMS;
 	if(gFrameCount>optFrameCount)
 	{
-		BlockMoveData(gLastGraphFrameMS+1,gLastGraphFrameMS,sizeof(UInt64)*(kGraphFrameCount)-1);
+		BlockMoveData(gLastGraphFrameMS+1,gLastGraphFrameMS,sizeof(UInt64)*(kGraphFrameCount-1));
 		gLastGraphFrameMS[kGraphFrameCount-1]=curMS;
 		return true;
 	}
