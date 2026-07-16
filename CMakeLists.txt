@@ -166,17 +166,22 @@ else()
     )
 endif()
 
-# Windows: bundle MSVC runtime DLLs next to the exe so users don't need
-# the Visual C++ Redistributable installed separately. Targets Windows 10/11,
-# so the Universal CRT is assumed present and not bundled.
+# Windows: bundle the MSVC runtime next to the exe so users don't need the
+# Visual C++ Redistributable installed separately. The game is plain C, so
+# only vcruntime140.dll is required (confirmed on a clean Windows 10 install);
+# the C++ runtime DLLs (msvcp140*, concrt140) are skipped. Targets
+# Windows 10/11, so the Universal CRT is assumed present and not bundled.
 if(WIN32 AND MSVC)
     set(CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS_SKIP TRUE)
     include(InstallRequiredSystemLibraries)
     foreach(_crt_lib ${CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS})
-        add_custom_command(TARGET RecklessDrivin POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                "${_crt_lib}" "$<TARGET_FILE_DIR:RecklessDrivin>"
-            VERBATIM
-        )
+        get_filename_component(_crt_name "${_crt_lib}" NAME)
+        if(_crt_name STREQUAL "vcruntime140.dll")
+            add_custom_command(TARGET RecklessDrivin POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                    "${_crt_lib}" "$<TARGET_FILE_DIR:RecklessDrivin>"
+                VERBATIM
+            )
+        endif()
     endforeach()
 endif()
