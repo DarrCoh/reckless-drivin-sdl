@@ -6,7 +6,7 @@
 
 [![macOS](https://img.shields.io/github/actions/workflow/status/DarrCoh/reckless-drivin-sdl/build.yml?label=macOS&logo=apple)](https://github.com/DarrCoh/reckless-drivin-sdl/actions/workflows/build.yml)
 [![Linux](https://img.shields.io/github/actions/workflow/status/DarrCoh/reckless-drivin-sdl/build.yml?label=Linux&logo=linux)](https://github.com/DarrCoh/reckless-drivin-sdl/actions/workflows/build.yml)
-[![Windows](https://img.shields.io/github/actions/workflow/status/DarrCoh/reckless-drivin-sdl/build.yml?label=Windows&logo=windows)](https://github.com/DarrCoh/reckless-drivin-sdl/actions/workflows/build.yml)
+[![Windows](https://img.shields.io/github/actions/workflow/status/DarrCoh/reckless-drivin-sdl/build.yml?label=Windows&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iI2ZmZiI+PHBhdGggZD0iTTAgMy40NDlMOS43NSAyLjF2OS40NTFIMG0xMC45NDktOS42MDJMMjQgMHYxMS40SDEwLjk0OU0wIDEyLjZoOS43NXY5LjQ1MUwwIDIwLjY5OU0xMC45NDkgMTIuNkgyNFYyNGwtMTIuOS0xLjgwMSIvPjwvc3ZnPg==)](https://github.com/DarrCoh/reckless-drivin-sdl/actions/workflows/build.yml)
 
 ### A native SDL2 port of the classic Mac OS racing game
 
